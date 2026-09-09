@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TripStatus {
+  PLANNING
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  trips        Trip[]
+}
+
+model Trip {
+  id        String     @id @default(uuid()) @db.Uuid
+  title     String
+  startDate DateTime?
+  endDate   DateTime?
+  currency  String     @default("EUR")
+  status    TripStatus @default(PLANNING)
+  notes     String?
+  ownerId   String     @db.Uuid
+  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([ownerId])
+}
