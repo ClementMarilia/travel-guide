@@ -23,6 +23,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   trips        Trip[]
+  aiSettings   AiSettings?
 }
 
 model Trip {
@@ -151,4 +152,22 @@ model VerificationCheck {
   createdAt DateTime  @default(now())
 
   @@index([tripId])
+}
+
+enum AiProvider {
+  GEMINI
+}
+
+// Bring-your-own-key: each user stores their own provider API key.
+// The key is encrypted at rest (AES-256-GCM, see src/lib/crypto.ts) and never returned by the API.
+model AiSettings {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @unique @db.Uuid
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     AiProvider @default(GEMINI)
+  model        String
+  encryptedKey String
+  keyLast4     String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }

@@ -4,6 +4,7 @@ import { ZodError } from 'zod';
 import { loginUser, registerUser } from './auth.js';
 import { getPrisma } from './lib/prisma.js';
 import { requireAuth, type AuthenticatedRequest } from './middleware/auth.js';
+import { aiRouter } from './routes/ai.js';
 import { tripsRouter } from './routes/trips.js';
 
 const app = express();
@@ -87,6 +88,7 @@ app.get('/auth/me', requireAuth, async (request: AuthenticatedRequest, response)
 });
 
 app.use('/trips', tripsRouter);
+app.use('/ai', aiRouter);
 
 app.listen(port, () => {
   console.log(`Travel Guide API running on port ${port}`);
