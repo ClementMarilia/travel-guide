@@ -90,7 +90,7 @@ interviewRouter.post('/answer', async (request: AuthenticatedRequest, response) 
 
     if (topic) {
       const { system, prompt } = questionPrompt(topic, context, next);
-      const question = unwrapGenerate(await adapter.generate(apiKey, settings.model, { system, prompt }));
+      const question = unwrapGenerate(await adapter.generate(apiKey, settings.model, { system, prompt })).text;
 
       next.pending = { topic, question };
       reply = {
@@ -99,7 +99,9 @@ interviewRouter.post('/answer', async (request: AuthenticatedRequest, response) 
       };
     } else {
       const { system, prompt } = summaryPrompt(context, next);
-      const text = unwrapGenerate(await adapter.generate(apiKey, settings.model, { system, prompt, json: true }));
+      const text = unwrapGenerate(
+        await adapter.generate(apiKey, settings.model, { system, prompt, json: true }),
+      ).text;
 
       let result: z.infer<typeof summaryResponseSchema>;
       try {

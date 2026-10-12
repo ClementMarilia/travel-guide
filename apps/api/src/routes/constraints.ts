@@ -12,6 +12,7 @@ import {
 } from '../planning/constraints.js';
 import { interviewContentSchema } from '../planning/interview.js';
 import { latestStageVersions } from '../planning/queries.js';
+import { checkGeneration, saveGenerated } from './generation.js';
 import { handleError, HttpError, loadTrip, unwrapGenerate } from './http.js';
 
 const generateSchema = z.object({ regenerate: z.boolean().optional() });
@@ -28,22 +29,12 @@ constraintsRouter.post('/generate', async (request: AuthenticatedRequest, respon
     const prisma = getPrisma();
 
     const latest = await latestStageVersions(trip.id);
-    const interviewStage = latest.get('INTERVIEW');
-    if (interviewStage?.status !== 'APPROVED') {
-      throw new HttpError(409, 'Stage INTERVIEW must be approved first');
-    }
+    const current = checkGeneration('CONSTRAINTS', latest, regenerate);
+    const interviewStage = latest.get('INTERVIEW')!;
 
     const interview = interviewContentSchema.safeParse(interviewStage.content);
     if (!interview.success || !interview.data.summary) {
       throw new HttpError(409, 'The approved interview content is invalid');
-    }
-
-    const current = latest.get('CONSTRAINTS');
-    if (current && current.status !== 'DRAFT' && current.status !== 'APPROVED') {
-      throw new HttpError(409, 'The constraints are awaiting approval; reopen them first');
-    }
-    if (current?.status === 'DRAFT' && !regenerate) {
-      throw new HttpError(409, 'A constraints draft already exists; send regenerate: true to replace it');
     }
 
     const settings = await prisma.aiSettings.findUnique({ where: { userId: request.userId! } });
@@ -64,7 +55,7 @@ constraintsRouter.post('/generate', async (request: AuthenticatedRequest, respon
         prompt,
         json: true,
       }),
-    );
+    ).text;
 
     let proposal;
     try {
@@ -78,24 +69,8 @@ constraintsRouter.post('/generate', async (request: AuthenticatedRequest, respon
       interviewVersion: interviewStage.version,
     }) as unknown as Prisma.InputJsonObject;
 
-    if (current?.status === 'DRAFT') {
-      // Optimistic lock: refuse to overwrite if the draft changed while the AI was working.
-      const { count } = await prisma.tripStage.updateMany({
-        where: { id: current.id, updatedAt: current.updatedAt, status: 'DRAFT' },
-        data: { content },
-      });
-      if (count === 0) {
-        throw new HttpError(409, 'The constraints changed in the meantime, try again');
-      }
-
-      response.json({ stage: await prisma.tripStage.findUnique({ where: { id: current.id } }) });
-      return;
-    }
-
-    const stage = await prisma.tripStage.create({
-      data: { tripId: trip.id, stage: 'CONSTRAINTS', version: (current?.version ?? 0) + 1, content },
-    });
-    response.status(201).json({ stage });
+    const { stage, created } = await saveGenerated(trip.id, 'CONSTRAINTS', current, content);
+    response.status(created ? 201 : 200).json({ stage });
   } catch (error) {
     handleError(error, response, 'Unable to generate constraints');
   }

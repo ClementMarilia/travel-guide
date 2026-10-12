@@ -4,6 +4,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { getPrisma } from '../lib/prisma.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { handleError, HttpError, loadTrip } from './http.js';
+import { baseContentSchema, baseSubmitProblems } from '../planning/base.js';
 import { constraintsContentSchema, submitProblems } from '../planning/constraints.js';
 import { interviewContentSchema } from '../planning/interview.js';
 import { latestStageVersions } from '../planning/queries.js';
@@ -104,9 +105,12 @@ stagesRouter.patch('/:stageId', async (request: AuthenticatedRequest, response) 
       throw new HttpError(409, 'Only a draft stage can be edited');
     }
 
-    // Later stages rely on the constraints shape, so edits must keep it valid.
+    // Later stages rely on these shapes, so edits must keep them valid.
     if (stage.stage === 'CONSTRAINTS' && !constraintsContentSchema.safeParse(data.content).success) {
       throw new HttpError(400, 'Invalid constraints content');
+    }
+    if (stage.stage === 'BASE' && !baseContentSchema.safeParse(data.content).success) {
+      throw new HttpError(400, 'Invalid base content');
     }
 
     const updated = await getPrisma().tripStage.update({
@@ -131,6 +135,18 @@ stagesRouter.post('/:stageId/submit', async (request: AuthenticatedRequest, resp
     // An interview can only go to approval once it has been completed and summarized.
     if (stage.stage === 'INTERVIEW' && !interviewContentSchema.safeParse(stage.content).data?.summary) {
       throw new HttpError(409, 'Finish the interview before submitting it');
+    }
+
+    if (stage.stage === 'BASE') {
+      const content = baseContentSchema.safeParse(stage.content);
+      if (!content.success) {
+        throw new HttpError(409, 'The base content is invalid; generate it first');
+      }
+
+      const problems = baseSubmitProblems(content.data);
+      if (problems.length > 0) {
+        throw new HttpError(409, problems.join('; '));
+      }
     }
 
     if (stage.stage === 'CONSTRAINTS') {

@@ -45,10 +45,10 @@ export function handleError(error: unknown, response: Response, fallback: string
   response.status(500).json({ message: fallback });
 }
 
-// Turns a failed AI call into the matching HTTP error; returns the text of a successful one.
+// Turns a failed AI call into the matching HTTP error; returns the successful result.
 export function unwrapGenerate(result: GenerateResult) {
   if (result.ok) {
-    return result.text;
+    return result;
   }
 
   switch (result.reason) {
@@ -58,6 +58,8 @@ export function unwrapGenerate(result: GenerateResult) {
       throw new HttpError(422, 'The configured AI model was not found');
     case 'RATE_LIMITED':
       throw new HttpError(429, 'The AI provider rate limit was reached, try again shortly');
+    case 'SEARCH_UNAVAILABLE':
+      throw new HttpError(422, 'Web search is not available for your AI key or model (check your plan and quota)');
     default:
       throw new HttpError(502, 'The AI provider did not return a usable response');
   }

@@ -7,11 +7,29 @@ export type GenerateRequest = {
   prompt: string;
   // Ask the model for a JSON document instead of free text.
   json?: boolean;
+  // Let the model use web search; the response then carries the sources it consulted.
+  search?: boolean;
+};
+
+export type Grounding = {
+  queries: string[];
+  chunks: { uri: string; title: string }[];
+  // Links a span of the response text (UTF-8 byte offsets) to the chunks that support it.
+  supports: { start: number; end: number; chunkIndices: number[] }[];
 };
 
 export type GenerateResult =
-  | { ok: true; text: string }
-  | { ok: false; reason: 'INVALID_KEY' | 'MODEL_NOT_FOUND' | 'RATE_LIMITED' | 'EMPTY_RESPONSE' | 'UNREACHABLE' };
+  | { ok: true; text: string; grounding?: Grounding }
+  | {
+      ok: false;
+      reason:
+        | 'INVALID_KEY'
+        | 'MODEL_NOT_FOUND'
+        | 'RATE_LIMITED'
+        | 'SEARCH_UNAVAILABLE'
+        | 'EMPTY_RESPONSE'
+        | 'UNREACHABLE';
+    };
 
 export interface AiProviderAdapter {
   // Verifies that the key works and the model exists, without generating content.

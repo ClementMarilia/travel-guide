@@ -19,6 +19,12 @@ Resultado aprovado da entrevista, versionado. É a entrada de todas as etapas se
 ## 3. Base
 Agrupa lugares por região e compara até 3 bairros para hospedagem (deslocamento, acesso, custo encontrado nas fontes, compatibilidade com o ritmo). Horários e fechamentos vêm de fontes oficiais; o que não for verificado é marcado. Recomenda uma base, mostra as descartadas e o motivo. **Não monta os dias.** Espera aprovação.
 
+**Como as fontes são tratadas (implementado):**
+1. O modelo pesquisa com a busca do Gemini e escreve fatos, um por linha.
+2. O servidor liga cada fato às fontes que a busca devolveu, resolve o redirecionamento do Google para a página final e registra a data da consulta. O modelo nunca escreve links.
+3. Um segundo passo estrutura a comparação citando só ids de fatos. Um fato sem fonte, ou marcado como não encontrado, fica `NÃO VERIFICADO`.
+4. O valor de uma hospedagem só é mantido com link direto, data e moeda; caso contrário é descartado, nunca completado.
+
 ## 4. Rota
 Distribui as atrações a partir da base aprovada, reduzindo o vai e volta.
 

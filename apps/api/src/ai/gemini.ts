@@ -1,4 +1,4 @@
-import type { AiProviderAdapter, GenerateResult } from './provider.js';
+import type { AiProviderAdapter, GenerateResult, Grounding } from './provider.js';
 
 // Overridable so tests can point at a local fake server.
 const baseUrl = () => process.env.GEMINI_BASE_URL ?? 'https://generativelanguage.googleapis.com/v1beta';
@@ -35,24 +35,58 @@ export const geminiAdapter: AiProviderAdapter = {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: request.system }] },
           contents: [{ role: 'user', parts: [{ text: request.prompt }] }],
+          ...(request.search && { tools: [{ google_search: {} }] }),
           generationConfig: request.json ? { responseMimeType: 'application/json' } : {},
         }),
         signal: AbortSignal.timeout(60_000),
       });
 
       if (!response.ok) {
+        // A 400 on a search request usually means search is not available for this key, model or plan.
+        if (request.search && response.status === 400) {
+          return { ok: false, reason: 'SEARCH_UNAVAILABLE' };
+        }
+
         return { ok: false, reason: reasonForStatus(response.status) };
       }
 
       const body = (await response.json()) as {
-        candidates?: { content?: { parts?: { text?: string }[] } }[];
+        candidates?: {
+          content?: { parts?: { text?: string }[] };
+          groundingMetadata?: {
+            webSearchQueries?: string[];
+            groundingChunks?: { web?: { uri?: string; title?: string } }[];
+            groundingSupports?: {
+              segment?: { startIndex?: number; endIndex?: number };
+              groundingChunkIndices?: number[];
+            }[];
+          };
+        }[];
       };
       const text = (body.candidates?.[0]?.content?.parts ?? [])
         .map((part) => part.text ?? '')
         .join('')
         .trim();
 
-      return text ? { ok: true, text } : { ok: false, reason: 'EMPTY_RESPONSE' };
+      if (!text) {
+        return { ok: false, reason: 'EMPTY_RESPONSE' };
+      }
+
+      const metadata = body.candidates?.[0]?.groundingMetadata;
+      const grounding: Grounding | undefined = metadata && {
+        queries: metadata.webSearchQueries ?? [],
+        chunks: (metadata.groundingChunks ?? []).map((chunk) => ({
+          uri: chunk.web?.uri ?? '',
+          title: chunk.web?.title ?? '',
+        })),
+        supports: (metadata.groundingSupports ?? []).map((support) => ({
+          start: support.segment?.startIndex ?? 0,
+          end: support.segment?.endIndex ?? 0,
+          chunkIndices: support.groundingChunkIndices ?? [],
+        })),
+      };
+
+      return { ok: true, text, grounding };
     } catch {
       return { ok: false, reason: 'UNREACHABLE' };
     }
