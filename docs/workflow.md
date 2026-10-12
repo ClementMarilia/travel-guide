@@ -26,7 +26,7 @@ Agrupa lugares por região e compara até 3 bairros para hospedagem (deslocament
 4. O valor de uma hospedagem só é mantido com link direto, data e moeda; caso contrário é descartado, nunca completado.
 
 ## 4. Rota
-Distribui as atrações a partir da base aprovada, reduzindo o vai e volta.
+Pesquisa as atrações a partir da base aprovada (mesmo mecanismo de busca com fontes da etapa 3) e as agrupa em áreas visitadas juntas, reduzindo o vai e volta. Para cada atração registra tempo desde a base, duração, horários e fechamentos, se exige reserva e o ingresso. "Exige reserva" só é informado quando um fato com fonte sustenta; ingresso segue a regra de preço. Ainda **não** distribui por dia: isso é a etapa 5.
 
 ## 5. Dias
 - Máximo de N prioridades por dia.

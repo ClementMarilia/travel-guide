@@ -7,12 +7,12 @@ import type { AuthenticatedRequest } from '../middleware/auth.js';
 import {
   baseProposalSchema,
   buildBaseContent,
-  extractFacts,
   researchPrompt,
   structurePrompt,
 } from '../planning/base.js';
 import { constraintsContentSchema } from '../planning/constraints.js';
 import { latestStageVersions } from '../planning/queries.js';
+import { extractFacts } from '../planning/research.js';
 import { checkGeneration, saveGenerated } from './generation.js';
 import { handleError, HttpError, loadTrip, unwrapGenerate } from './http.js';
 
