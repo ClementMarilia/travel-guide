@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ZodError, z } from 'zod';
 import { getPrisma } from '../lib/prisma.js';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js';
+import { stagesRouter } from './stages.js';
 
 const statusValues = ['PLANNING', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'] as const;
 
@@ -33,6 +34,7 @@ const idSchema = z.uuid();
 export const tripsRouter = Router();
 
 tripsRouter.use(requireAuth);
+tripsRouter.use('/:tripId/stages', stagesRouter);
 
 tripsRouter.get('/', async (request: AuthenticatedRequest, response) => {
   const trips = await getPrisma().trip.findMany({
