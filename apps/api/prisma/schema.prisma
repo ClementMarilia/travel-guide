@@ -38,5 +38,117 @@ model Trip {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
+  destination String?
+  travelers   Traveler[]
+  stages      TripStage[]
+  budgetItems BudgetItem[]
+  checks      VerificationCheck[]
+
   @@index([ownerId])
+}
+
+// Planning workflow: INTERVIEW -> CONSTRAINTS -> BASE -> ROUTE -> DAYS -> BUDGET -> VERIFICATION.
+// A stage can only start once the previous one is APPROVED (enforced in src/planning/stages.ts).
+enum PlanningStage {
+  INTERVIEW
+  CONSTRAINTS
+  BASE
+  ROUTE
+  DAYS
+  BUDGET
+  VERIFICATION
+}
+
+enum StageStatus {
+  DRAFT
+  AWAITING_APPROVAL
+  APPROVED
+}
+
+enum BudgetCategory {
+  LODGING
+  FOOD
+  TRANSPORT
+  ATTRACTIONS
+  CONTINGENCY
+}
+
+enum PriceStatus {
+  VERIFIED
+  NOT_VERIFIED
+}
+
+enum CheckKind {
+  FLIGHT
+  HOTEL
+  TICKET
+  SCHEDULE
+}
+
+model Traveler {
+  id            String   @id @default(uuid()) @db.Uuid
+  tripId        String   @db.Uuid
+  trip          Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  name          String
+  // The one item each traveler will not give up, e.g. "no tour starting at 7am".
+  nonNegotiable String
+  createdAt     DateTime @default(now())
+
+  @@index([tripId])
+}
+
+// One row per version of a stage. `content` holds the stage output (interview answers,
+// conflicts, base comparison, day plans...). Re-running a stage creates a new version.
+model TripStage {
+  id         String        @id @default(uuid()) @db.Uuid
+  tripId     String        @db.Uuid
+  trip       Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  stage      PlanningStage
+  version    Int           @default(1)
+  status     StageStatus   @default(DRAFT)
+  content    Json          @default("{}")
+  approvedAt DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([tripId, stage, version])
+  @@index([tripId, stage])
+}
+
+// A price only counts toward the budget when it has sourceUrl + consultedAt + currency.
+// Otherwise it is stored as NOT_VERIFIED with no amount: prices are never invented or filled in.
+model BudgetItem {
+  id          String         @id @default(uuid()) @db.Uuid
+  tripId      String         @db.Uuid
+  trip        Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  category    BudgetCategory
+  description String
+  status      PriceStatus    @default(NOT_VERIFIED)
+  amount      Decimal?       @db.Decimal(12, 2)
+  currency    String?
+  sourceUrl   String?
+  consultedAt DateTime?
+  // Overrun risk and the decision that reduces it.
+  risk        String?
+  mitigation  String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([tripId])
+}
+
+// Final lock: before booking, the sources behind flights, hotels, tickets and schedules are opened.
+model VerificationCheck {
+  id        String    @id @default(uuid()) @db.Uuid
+  tripId    String    @db.Uuid
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  kind      CheckKind
+  subject   String
+  sourceUrl String
+  checkedAt DateTime?
+  passed    Boolean   @default(false)
+  notes     String?
+  createdAt DateTime  @default(now())
+
+  @@index([tripId])
 }
