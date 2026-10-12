@@ -3,6 +3,7 @@ import { ZodError, z } from 'zod';
 import { getPrisma } from '../lib/prisma.js';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js';
 import { baseRouter } from './base.js';
+import { budgetRouter } from './budget.js';
 import { constraintsRouter } from './constraints.js';
 import { daysRouter } from './days.js';
 import { interviewRouter } from './interview.js';
@@ -47,6 +48,7 @@ tripsRouter.use('/:tripId/constraints', constraintsRouter);
 tripsRouter.use('/:tripId/base', baseRouter);
 tripsRouter.use('/:tripId/route', routeStageRouter);
 tripsRouter.use('/:tripId/days', daysRouter);
+tripsRouter.use('/:tripId/budget', budgetRouter);
 tripsRouter.use('/:tripId/travelers', travelersRouter);
 
 tripsRouter.get('/', async (request: AuthenticatedRequest, response) => {

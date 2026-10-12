@@ -39,9 +39,13 @@ Distribui a rota aprovada pelos dias da viagem (exige datas). O limite de priori
 - O servidor impõe: limite por dia, cada atração uma única vez, horários fora do que se quis evitar, atrações essenciais agendadas ou justificadas, e um lugar para comer e um plano de chuva em cada dia. Espera aprovação.
 
 ## 6. Orçamento
-Distribui por hospedagem, alimentação, transporte, atrações e margem de imprevisto. Mostra os itens com maior risco de estourar e a decisão que reduz cada risco.
-
-**Regra de preço:** só entra no orçamento um valor com **link direto da página onde o preço aparece, data da consulta e moeda**. Sem isso, o item fica `NÃO VERIFICADO`. A IA nunca inventa nem completa preço ausente.
+Montado a partir dos preços já verificados nas etapas aprovadas (hospedagem da base, ingressos das atrações agendadas, a refeição planejada de cada dia) mais uma busca com fontes para o transporte. Exige orçamento total nas restrições aprovadas.
+- O modelo só indica a **unidade** de cada preço (por noite, por pessoa, por dia, total), propõe a divisão percentual entre hospedagem, alimentação, transporte, atrações e margem de imprevisto (mínimo de 5%) e escreve a decisão que reduz cada risco.
+- Quantidades, multiplicações, totais e riscos são calculados pelo servidor. Cada linha mostra a fórmula.
+- **Riscos** (calculados): `OVER_ALLOCATION` (verificado acima do reservado), `NEAR_LIMIT` (acima de 80%), `LOW_COVERAGE` (itens sem preço verificado, então o total real pode ser maior) e `PARTIAL_SCOPE` (alimentação só estima a refeição planejada). Todo risco precisa de uma decisão antes da aprovação.
+- **Regra de preço:** só entra no total um preço `VERIFIED` (link direto, data e moeda), na moeda do orçamento e com unidade conhecida. Os demais ficam listados como `NÃO VERIFICADO`, sem valor. Não há conversão de moedas.
+- O envio recalcula tudo a partir dos itens: um item contado sem fonte, ou um total que não bate, é recusado.
+- Pessoas e quartos usados nas multiplicações vêm dos viajantes cadastrados (e 1 quarto), ou são informados ao gerar.
 
 ## 7. Verificação (a trava)
 Antes de reservar, as fontes de voo, hotel, ingresso e horário que sustentam o plano são abertas e conferidas. Só então o plano é considerado pronto para reserva.
