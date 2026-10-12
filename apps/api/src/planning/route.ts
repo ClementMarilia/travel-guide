@@ -81,7 +81,7 @@ type TripContext = { destination: string | null; startDate: Date | null; endDate
 
 const day = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : 'não definida');
 
-function tripDays(trip: TripContext) {
+export function tripDays(trip: TripContext) {
   if (!trip.startDate || !trip.endDate) return null;
   return Math.round((trip.endDate.getTime() - trip.startDate.getTime()) / 86_400_000) + 1;
 }

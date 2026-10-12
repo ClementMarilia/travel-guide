@@ -5,6 +5,7 @@ import { getPrisma } from '../lib/prisma.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { handleError, HttpError, loadTrip } from './http.js';
 import { baseContentSchema, baseSubmitProblems } from '../planning/base.js';
+import { daysContentSchema, daysSubmitProblems } from '../planning/days.js';
 import { routeContentSchema, routeSubmitProblems } from '../planning/route.js';
 import { constraintsContentSchema, submitProblems } from '../planning/constraints.js';
 import { interviewContentSchema } from '../planning/interview.js';
@@ -116,6 +117,9 @@ stagesRouter.patch('/:stageId', async (request: AuthenticatedRequest, response) 
     if (stage.stage === 'ROUTE' && !routeContentSchema.safeParse(data.content).success) {
       throw new HttpError(400, 'Invalid route content');
     }
+    if (stage.stage === 'DAYS' && !daysContentSchema.safeParse(data.content).success) {
+      throw new HttpError(400, 'Invalid days content');
+    }
 
     const updated = await getPrisma().tripStage.update({
       where: { id: stage.id },
@@ -139,6 +143,18 @@ stagesRouter.post('/:stageId/submit', async (request: AuthenticatedRequest, resp
     // An interview can only go to approval once it has been completed and summarized.
     if (stage.stage === 'INTERVIEW' && !interviewContentSchema.safeParse(stage.content).data?.summary) {
       throw new HttpError(409, 'Finish the interview before submitting it');
+    }
+
+    if (stage.stage === 'DAYS') {
+      const content = daysContentSchema.safeParse(stage.content);
+      if (!content.success) {
+        throw new HttpError(409, 'The days content is invalid; generate it first');
+      }
+
+      const problems = daysSubmitProblems(content.data);
+      if (problems.length > 0) {
+        throw new HttpError(409, problems.join('; '));
+      }
     }
 
     if (stage.stage === 'ROUTE') {

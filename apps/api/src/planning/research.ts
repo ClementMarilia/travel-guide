@@ -13,6 +13,9 @@ export const FACT_CATEGORIES = [
   'REGIAO',
   'RESERVA',
   'DURACAO',
+  'ALIMENTACAO',
+  'FILA',
+  'CHUVA',
   'NAO_ENCONTRADO',
 ] as const;
 

@@ -29,11 +29,14 @@ Agrupa lugares por região e compara até 3 bairros para hospedagem (deslocament
 Pesquisa as atrações a partir da base aprovada (mesmo mecanismo de busca com fontes da etapa 3) e as agrupa em áreas visitadas juntas, reduzindo o vai e volta. Para cada atração registra tempo desde a base, duração, horários e fechamentos, se exige reserva e o ingresso. "Exige reserva" só é informado quando um fato com fonte sustenta; ingresso segue a regra de preço. Ainda **não** distribui por dia: isso é a etapa 5.
 
 ## 5. Dias
-- Máximo de N prioridades por dia.
-- Manhã planejada, tarde flexível, tempo realista entre pontos, plano para chuva.
-- Um lugar para comer perto da rota, compatível com preferências e orçamento, com a fonte consultada.
-- Uma atração popular que pode não compensar para o perfil, com o critério explícito (custo, fila, deslocamento, duração ou incompatibilidade). Opinião não é apresentada como fato.
-- Sinaliza o que exige reserva. Espera aprovação.
+Distribui a rota aprovada pelos dias da viagem (exige datas). O limite de prioridades por dia vem das restrições aprovadas (`pace.maxPrioritiesPerDay`) ou é informado ao gerar.
+- Manhã planejada com horários; tarde flexível, com opções em vez de agenda cheia.
+- Tempo entre pontos só quando um fato com fonte informa; senão fica `NÃO VERIFICADO`.
+- Um lugar para comer perto da rota de cada dia, com preço sob a regra de preço e a fonte registrada.
+- Plano para chuva por dia.
+- Uma atração popular que pode não compensar para o perfil, com o critério (custo, fila, deslocamento, duração ou incompatibilidade). É registrada como **avaliação**, nunca como fato, e indica se há evidência com fonte.
+- Reservas sinalizadas: `REQUIRED` (fonte confirma) ou `UNKNOWN` (nenhuma fonte diz; confirmar antes de ir).
+- O servidor impõe: limite por dia, cada atração uma única vez, horários fora do que se quis evitar, atrações essenciais agendadas ou justificadas, e um lugar para comer e um plano de chuva em cada dia. Espera aprovação.
 
 ## 6. Orçamento
 Distribui por hospedagem, alimentação, transporte, atrações e margem de imprevisto. Mostra os itens com maior risco de estourar e a decisão que reduz cada risco.
