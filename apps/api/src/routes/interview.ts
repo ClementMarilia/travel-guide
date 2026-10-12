@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { adapters } from '../ai/index.js';
-import type { GenerateResult } from '../ai/provider.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { decryptSecret } from '../lib/crypto.js';
 import { getPrisma } from '../lib/prisma.js';
@@ -14,29 +13,12 @@ import {
   summaryResponseSchema,
   type InterviewContent,
 } from '../planning/interview.js';
-import { handleError, HttpError, loadTrip } from './http.js';
+import { handleError, HttpError, loadTrip, unwrapGenerate } from './http.js';
 
 const answerSchema = z.object({ answer: z.string().trim().min(1).max(1000).optional() });
 
 // Mounted at /trips/:tripId/interview (auth is applied by the trips router).
 export const interviewRouter = Router({ mergeParams: true });
-
-function unwrap(result: GenerateResult) {
-  if (result.ok) {
-    return result.text;
-  }
-
-  switch (result.reason) {
-    case 'INVALID_KEY':
-      throw new HttpError(422, 'The AI provider rejected your API key');
-    case 'MODEL_NOT_FOUND':
-      throw new HttpError(422, 'The configured AI model was not found');
-    case 'RATE_LIMITED':
-      throw new HttpError(429, 'The AI provider rate limit was reached, try again shortly');
-    default:
-      throw new HttpError(502, 'The AI provider did not return a usable response');
-  }
-}
 
 // One step of the interview: records the answer to the pending question (if any), then either
 // asks the next question or, after the last one, summarizes the answers and flags conflicts.
@@ -108,7 +90,7 @@ interviewRouter.post('/answer', async (request: AuthenticatedRequest, response) 
 
     if (topic) {
       const { system, prompt } = questionPrompt(topic, context, next);
-      const question = unwrap(await adapter.generate(apiKey, settings.model, { system, prompt }));
+      const question = unwrapGenerate(await adapter.generate(apiKey, settings.model, { system, prompt }));
 
       next.pending = { topic, question };
       reply = {
@@ -117,7 +99,7 @@ interviewRouter.post('/answer', async (request: AuthenticatedRequest, response) 
       };
     } else {
       const { system, prompt } = summaryPrompt(context, next);
-      const text = unwrap(await adapter.generate(apiKey, settings.model, { system, prompt, json: true }));
+      const text = unwrapGenerate(await adapter.generate(apiKey, settings.model, { system, prompt, json: true }));
 
       let result: z.infer<typeof summaryResponseSchema>;
       try {

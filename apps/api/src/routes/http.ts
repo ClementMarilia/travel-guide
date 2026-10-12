@@ -1,6 +1,7 @@
 import type { Response } from 'express';
 import { ZodError, z } from 'zod';
 import { getPrisma } from '../lib/prisma.js';
+import type { GenerateResult } from '../ai/provider.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class HttpError extends Error {
@@ -42,4 +43,22 @@ export function handleError(error: unknown, response: Response, fallback: string
   }
 
   response.status(500).json({ message: fallback });
+}
+
+// Turns a failed AI call into the matching HTTP error; returns the text of a successful one.
+export function unwrapGenerate(result: GenerateResult) {
+  if (result.ok) {
+    return result.text;
+  }
+
+  switch (result.reason) {
+    case 'INVALID_KEY':
+      throw new HttpError(422, 'The AI provider rejected your API key');
+    case 'MODEL_NOT_FOUND':
+      throw new HttpError(422, 'The configured AI model was not found');
+    case 'RATE_LIMITED':
+      throw new HttpError(429, 'The AI provider rate limit was reached, try again shortly');
+    default:
+      throw new HttpError(502, 'The AI provider did not return a usable response');
+  }
 }

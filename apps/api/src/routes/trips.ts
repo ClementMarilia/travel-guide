@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ZodError, z } from 'zod';
 import { getPrisma } from '../lib/prisma.js';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js';
+import { constraintsRouter } from './constraints.js';
 import { interviewRouter } from './interview.js';
 import { stagesRouter } from './stages.js';
 import { travelersRouter } from './travelers.js';
@@ -39,6 +40,7 @@ export const tripsRouter = Router();
 tripsRouter.use(requireAuth);
 tripsRouter.use('/:tripId/stages', stagesRouter);
 tripsRouter.use('/:tripId/interview', interviewRouter);
+tripsRouter.use('/:tripId/constraints', constraintsRouter);
 tripsRouter.use('/:tripId/travelers', travelersRouter);
 
 tripsRouter.get('/', async (request: AuthenticatedRequest, response) => {

@@ -4,7 +4,9 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { getPrisma } from '../lib/prisma.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { handleError, HttpError, loadTrip } from './http.js';
+import { constraintsContentSchema, submitProblems } from '../planning/constraints.js';
 import { interviewContentSchema } from '../planning/interview.js';
+import { latestStageVersions } from '../planning/queries.js';
 import { canStartStage, STAGE_ORDER, previousStage, type Stage } from '../planning/stages.js';
 
 const stageIdSchema = z.uuid();
@@ -19,23 +21,6 @@ const updateStageSchema = z.object({ content: contentSchema });
 
 // Mounted at /trips/:tripId/stages (auth is applied by the trips router).
 export const stagesRouter = Router({ mergeParams: true });
-
-// The newest version of each stage is the one that counts.
-async function latestVersions(tripId: string) {
-  const rows = await getPrisma().tripStage.findMany({
-    where: { tripId },
-    orderBy: [{ stage: 'asc' }, { version: 'desc' }],
-  });
-  const latest = new Map<Stage, (typeof rows)[number]>();
-
-  for (const row of rows) {
-    if (!latest.has(row.stage)) {
-      latest.set(row.stage, row);
-    }
-  }
-
-  return latest;
-}
 
 async function loadStage(request: AuthenticatedRequest) {
   const trip = await loadTrip(request);
@@ -68,7 +53,7 @@ stagesRouter.post('/', async (request: AuthenticatedRequest, response) => {
   try {
     const trip = await loadTrip(request);
     const data = startStageSchema.parse(request.body);
-    const latest = await latestVersions(trip.id);
+    const latest = await latestStageVersions(trip.id);
 
     const approved = new Set<Stage>();
     for (const [stage, row] of latest) {
@@ -119,6 +104,11 @@ stagesRouter.patch('/:stageId', async (request: AuthenticatedRequest, response) 
       throw new HttpError(409, 'Only a draft stage can be edited');
     }
 
+    // Later stages rely on the constraints shape, so edits must keep it valid.
+    if (stage.stage === 'CONSTRAINTS' && !constraintsContentSchema.safeParse(data.content).success) {
+      throw new HttpError(400, 'Invalid constraints content');
+    }
+
     const updated = await getPrisma().tripStage.update({
       where: { id: stage.id },
       data: { content: data.content as Prisma.InputJsonObject },
@@ -141,6 +131,22 @@ stagesRouter.post('/:stageId/submit', async (request: AuthenticatedRequest, resp
     // An interview can only go to approval once it has been completed and summarized.
     if (stage.stage === 'INTERVIEW' && !interviewContentSchema.safeParse(stage.content).data?.summary) {
       throw new HttpError(409, 'Finish the interview before submitting it');
+    }
+
+    if (stage.stage === 'CONSTRAINTS') {
+      const content = constraintsContentSchema.safeParse(stage.content);
+      if (!content.success) {
+        throw new HttpError(409, 'The constraints content is invalid');
+      }
+
+      const travelers = await getPrisma().traveler.findMany({
+        where: { tripId: stage.tripId },
+        select: { name: true, nonNegotiable: true },
+      });
+      const problems = submitProblems(content.data, travelers);
+      if (problems.length > 0) {
+        throw new HttpError(409, problems.join('; '));
+      }
     }
 
     const updated = await getPrisma().tripStage.update({
@@ -182,7 +188,7 @@ stagesRouter.post('/:stageId/approve', async (request: AuthenticatedRequest, res
       throw new HttpError(409, 'Only a stage awaiting approval can be approved');
     }
 
-    const latest = await latestVersions(stage.tripId);
+    const latest = await latestStageVersions(stage.tripId);
     if (latest.get(stage.stage)?.id !== stage.id) {
       throw new HttpError(409, 'Only the latest version of a stage can be approved');
     }
