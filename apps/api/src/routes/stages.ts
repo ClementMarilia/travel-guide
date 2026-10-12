@@ -5,6 +5,7 @@ import { getPrisma } from '../lib/prisma.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { handleError, HttpError, loadTrip } from './http.js';
 import { baseContentSchema, baseSubmitProblems } from '../planning/base.js';
+import { verificationContentSchema, verificationSubmitProblems } from '../planning/verification.js';
 import { budgetContentSchema, budgetSubmitProblems } from '../planning/budget.js';
 import { daysContentSchema, daysSubmitProblems } from '../planning/days.js';
 import { routeContentSchema, routeSubmitProblems } from '../planning/route.js';
@@ -108,6 +109,11 @@ stagesRouter.patch('/:stageId', async (request: AuthenticatedRequest, response) 
       throw new HttpError(409, 'Only a draft stage can be edited');
     }
 
+    // Results come from pages fetched by the server or explicit confirmations, never from hand edits.
+    if (stage.stage === 'VERIFICATION') {
+      throw new HttpError(409, 'The verification is edited only through the /verification endpoints');
+    }
+
     // Later stages rely on these shapes, so edits must keep them valid.
     if (stage.stage === 'CONSTRAINTS' && !constraintsContentSchema.safeParse(data.content).success) {
       throw new HttpError(400, 'Invalid constraints content');
@@ -147,6 +153,24 @@ stagesRouter.post('/:stageId/submit', async (request: AuthenticatedRequest, resp
     // An interview can only go to approval once it has been completed and summarized.
     if (stage.stage === 'INTERVIEW' && !interviewContentSchema.safeParse(stage.content).data?.summary) {
       throw new HttpError(409, 'Finish the interview before submitting it');
+    }
+
+    if (stage.stage === 'VERIFICATION') {
+      const content = verificationContentSchema.safeParse(stage.content);
+      if (!content.success) {
+        throw new HttpError(409, 'The verification content is invalid; generate it first');
+      }
+
+      // The checks must belong to the budget that is currently approved.
+      const budget = (await latestStageVersions(stage.tripId)).get('BUDGET');
+      if (budget?.id !== content.data.source.budgetStageId) {
+        throw new HttpError(409, 'The plan changed after this verification; regenerate it');
+      }
+
+      const problems = verificationSubmitProblems(content.data);
+      if (problems.length > 0) {
+        throw new HttpError(409, problems.join('; '));
+      }
     }
 
     if (stage.stage === 'BUDGET') {

@@ -48,7 +48,16 @@ Montado a partir dos preços já verificados nas etapas aprovadas (hospedagem da
 - Pessoas e quartos usados nas multiplicações vêm dos viajantes cadastrados (e 1 quarto), ou são informados ao gerar.
 
 ## 7. Verificação (a trava)
-Antes de reservar, as fontes de voo, hotel, ingresso e horário que sustentam o plano são abertas e conferidas. Só então o plano é considerado pronto para reserva.
+Antes de reservar, o servidor **abre** as fontes que sustentam o plano e confere se o valor ou horário afirmado realmente aparece na página:
+- cada preço que entrou no orçamento (hospedagem, ingressos, refeições, transporte);
+- os horários de cada atração agendada, usando a frase encontrada pela pesquisa e não a paráfrase do modelo;
+- os **voos**, que não fazem parte do plano e são informados por você com o link da tarifa e o valor ou textos que devem aparecer (número do voo, horário).
+
+Resultado de cada item: `CONFIRMED` (com o trecho da página como evidência), `NOT_FOUND_ON_PAGE`, `NOT_CHECKABLE` (sem link, login, página que carrega por JavaScript, PDF ou endereço bloqueado) ou `UNREACHABLE` (link quebrado ou fora do ar). Itens não conferidos automaticamente podem ser confirmados por você com uma nota do que viu (`MANUALLY_CONFIRMED`).
+
+A aprovação só é possível quando todos os itens estão confirmados, automática ou manualmente, e o plano não mudou depois da verificação. Resultados não podem ser editados à mão: vêm de uma página buscada pelo servidor ou de uma confirmação manual explícita.
+
+Segurança: o servidor só acessa endereços públicos (http/https). Redes internas, `localhost` e endereços de metadados de nuvem são bloqueados no momento da conexão, inclusive em redirecionamentos.
 
 ## Regras de implementação
 - Cada etapa tem estado (`DRAFT` → `AWAITING_APPROVAL` → `APPROVED`) e só pode iniciar se a anterior estiver `APPROVED`.

@@ -10,6 +10,7 @@ import { interviewRouter } from './interview.js';
 import { routeStageRouter } from './route-stage.js';
 import { stagesRouter } from './stages.js';
 import { travelersRouter } from './travelers.js';
+import { verificationRouter } from './verification.js';
 
 const statusValues = ['PLANNING', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'] as const;
 
@@ -49,6 +50,7 @@ tripsRouter.use('/:tripId/base', baseRouter);
 tripsRouter.use('/:tripId/route', routeStageRouter);
 tripsRouter.use('/:tripId/days', daysRouter);
 tripsRouter.use('/:tripId/budget', budgetRouter);
+tripsRouter.use('/:tripId/verification', verificationRouter);
 tripsRouter.use('/:tripId/travelers', travelersRouter);
 
 tripsRouter.get('/', async (request: AuthenticatedRequest, response) => {
