@@ -4,6 +4,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { getPrisma } from '../lib/prisma.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { handleError, HttpError, loadTrip } from './http.js';
+import { interviewContentSchema } from '../planning/interview.js';
 import { canStartStage, STAGE_ORDER, previousStage, type Stage } from '../planning/stages.js';
 
 const stageIdSchema = z.uuid();
@@ -135,6 +136,11 @@ stagesRouter.post('/:stageId/submit', async (request: AuthenticatedRequest, resp
 
     if (stage.status !== 'DRAFT') {
       throw new HttpError(409, 'Only a draft stage can be submitted');
+    }
+
+    // An interview can only go to approval once it has been completed and summarized.
+    if (stage.stage === 'INTERVIEW' && !interviewContentSchema.safeParse(stage.content).data?.summary) {
+      throw new HttpError(409, 'Finish the interview before submitting it');
     }
 
     const updated = await getPrisma().tripStage.update({

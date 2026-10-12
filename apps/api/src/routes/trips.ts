@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ZodError, z } from 'zod';
 import { getPrisma } from '../lib/prisma.js';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js';
+import { interviewRouter } from './interview.js';
 import { stagesRouter } from './stages.js';
 import { travelersRouter } from './travelers.js';
 
@@ -9,6 +10,7 @@ const statusValues = ['PLANNING', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED
 
 const tripFields = {
   title: z.string().trim().min(1).max(120),
+  destination: z.string().trim().min(1).max(120).nullable().optional(),
   startDate: z.coerce.date().nullable().optional(),
   endDate: z.coerce.date().nullable().optional(),
   currency: z.string().trim().toUpperCase().length(3),
@@ -36,6 +38,7 @@ export const tripsRouter = Router();
 
 tripsRouter.use(requireAuth);
 tripsRouter.use('/:tripId/stages', stagesRouter);
+tripsRouter.use('/:tripId/interview', interviewRouter);
 tripsRouter.use('/:tripId/travelers', travelersRouter);
 
 tripsRouter.get('/', async (request: AuthenticatedRequest, response) => {
