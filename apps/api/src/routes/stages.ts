@@ -1,11 +1,11 @@
-import { Router, type Response } from 'express';
-import { ZodError, z } from 'zod';
+import { Router } from 'express';
+import { z } from 'zod';
 import type { Prisma } from '../generated/prisma/client.js';
 import { getPrisma } from '../lib/prisma.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
+import { handleError, HttpError, loadTrip } from './http.js';
 import { canStartStage, STAGE_ORDER, previousStage, type Stage } from '../planning/stages.js';
 
-const tripIdSchema = z.uuid();
 const stageIdSchema = z.uuid();
 const contentSchema = z.record(z.string(), z.unknown());
 
@@ -18,26 +18,6 @@ const updateStageSchema = z.object({ content: contentSchema });
 
 // Mounted at /trips/:tripId/stages (auth is applied by the trips router).
 export const stagesRouter = Router({ mergeParams: true });
-
-class HttpError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-
-async function loadTrip(request: AuthenticatedRequest) {
-  const tripId = tripIdSchema.parse(request.params.tripId);
-  const trip = await getPrisma().trip.findFirst({ where: { id: tripId, ownerId: request.userId } });
-
-  if (!trip) {
-    throw new HttpError(404, 'Trip not found');
-  }
-
-  return trip;
-}
 
 // The newest version of each stage is the one that counts.
 async function latestVersions(tripId: string) {
@@ -211,23 +191,3 @@ stagesRouter.post('/:stageId/approve', async (request: AuthenticatedRequest, res
     handleError(error, response, 'Unable to approve stage');
   }
 });
-
-function handleError(error: unknown, response: Response, fallback: string) {
-  if (error instanceof HttpError) {
-    response.status(error.status).json({ message: error.message });
-    return;
-  }
-
-  if (error instanceof ZodError) {
-    response.status(400).json({ message: 'Invalid data', issues: error.issues });
-    return;
-  }
-
-  // Unique (tripId, stage, version) violation: two requests raced to start the same stage.
-  if (typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2002') {
-    response.status(409).json({ message: 'Stage was started concurrently' });
-    return;
-  }
-
-  response.status(500).json({ message: fallback });
-}

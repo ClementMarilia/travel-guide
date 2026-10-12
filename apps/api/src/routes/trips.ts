@@ -3,6 +3,7 @@ import { ZodError, z } from 'zod';
 import { getPrisma } from '../lib/prisma.js';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js';
 import { stagesRouter } from './stages.js';
+import { travelersRouter } from './travelers.js';
 
 const statusValues = ['PLANNING', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'] as const;
 
@@ -35,6 +36,7 @@ export const tripsRouter = Router();
 
 tripsRouter.use(requireAuth);
 tripsRouter.use('/:tripId/stages', stagesRouter);
+tripsRouter.use('/:tripId/travelers', travelersRouter);
 
 tripsRouter.get('/', async (request: AuthenticatedRequest, response) => {
   const trips = await getPrisma().trip.findMany({
