@@ -28,24 +28,26 @@ export default function Login() {
   }
 
   return (
-    <main className="panel" style={{ maxWidth: 480 }}>
-      <h1>Entrar</h1>
-      <p className="muted">Enviaremos um link de acesso ao seu e-mail ou entre com o Google.</p>
-      <form onSubmit={sendLink}>
-        <label className="field">
-          E-mail
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </label>
-        <button disabled={loading} className="btn">
-          {loading ? 'Enviando...' : 'Enviar link'}
-        </button>
-      </form>
-      <p>
-        <button type="button" className="btn secondary" onClick={google}>
-          Entrar com Google
-        </button>
-      </p>
-      <p aria-live="polite">{message}</p>
+    <main className="container">
+      <div className="panel" style={{ maxWidth: 480 }}>
+        <h1>Entrar</h1>
+        <p className="muted">Enviaremos um link de acesso ao seu e-mail ou entre com o Google.</p>
+        <form onSubmit={sendLink}>
+          <label className="field">
+            E-mail
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          </label>
+          <button disabled={loading} className="btn">
+            {loading ? 'Enviando...' : 'Enviar link'}
+          </button>
+        </form>
+        <p>
+          <button type="button" className="btn secondary" onClick={google}>
+            Entrar com Google
+          </button>
+        </p>
+        <p aria-live="polite">{message}</p>
+      </div>
     </main>
   );
 }
