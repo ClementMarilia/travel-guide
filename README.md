@@ -11,7 +11,7 @@ O projeto roda inteiramente na nuvem: código no GitHub, banco e autenticação 
 3. **Variáveis de ambiente** (Vercel → Settings → Environment Variables; nunca no código ou no Git):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: chave publicável, protegida pelas políticas RLS.
-   - `GEMINI_API_KEY` e `GEMINI_MODEL` (opcional, padrão `gemini-2.5-flash`): ativam o chat. Só no servidor; nunca com prefixo `NEXT_PUBLIC_`. A chave é criada no Google AI Studio.
+   - `GEMINI_API_KEY` e `GEMINI_MODEL` (opcional, padrão `gemini-3.8-flash`, o modelo recomendado): ativam o chat. Cada pessoa pode escolher outro modelo em **Perfil → Integrações de IA**; a lista vem da própria API do Gemini. Só no servidor; nunca com prefixo `NEXT_PUBLIC_`. A chave é criada no Google AI Studio.
 4. **URLs de retorno:** no Supabase (Authentication → URL Configuration), cadastre o domínio da Vercel e `https://<dominio>/auth/callback`. As chaves do Google ficam no painel do Supabase.
 5. Cada push na branch gera um _preview deploy_ na Vercel; a validação (`typecheck`, testes, build) roda lá.
 

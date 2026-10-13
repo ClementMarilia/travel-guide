@@ -9,6 +9,7 @@ import {
 import { capturedCount, checklistItems, formatDate, isComplete, nextAction } from '../src/lib/checklist';
 import { currentStage, progressPercent, type StageRow } from '../src/lib/stages';
 import { rateLimit } from '../src/lib/rate-limit';
+import { filterModels, pickModel, sortModels } from '../src/lib/models';
 
 const emptyTrip: TripFields = {
   destination: null,
@@ -155,5 +156,59 @@ describe('rateLimit', () => {
     expect(rateLimit('k', 2, 1000, 10)).toBe(true);
     expect(rateLimit('k', 2, 1000, 20)).toBe(false);
     expect(rateLimit('k', 2, 1000, 1500)).toBe(true);
+  });
+});
+
+describe('models', () => {
+  const raw = {
+    models: [
+      {
+        name: 'models/gemini-3.8-flash',
+        displayName: 'Gemini 3.8 Flash',
+        supportedGenerationMethods: ['generateContent'],
+      },
+      {
+        name: 'models/gemini-3.0-pro',
+        displayName: 'Gemini 3.0 Pro',
+        supportedGenerationMethods: ['generateContent'],
+      },
+      {
+        name: 'models/gemini-embedding-001',
+        displayName: 'Embedding',
+        supportedGenerationMethods: ['embedContent'],
+      },
+      {
+        name: 'models/gemini-3.8-flash-image',
+        displayName: 'Image',
+        supportedGenerationMethods: ['generateContent'],
+      },
+      { name: 'models/text-bison', displayName: 'Bison', supportedGenerationMethods: ['generateContent'] },
+      { name: 'models/gemini-bad id', displayName: 'Bad', supportedGenerationMethods: ['generateContent'] },
+    ],
+  };
+
+  it('mantém só modelos Gemini de chat', () => {
+    expect(filterModels(raw).map((m) => m.id)).toEqual(['gemini-3.8-flash', 'gemini-3.0-pro']);
+    expect(filterModels(null)).toEqual([]);
+  });
+
+  it('põe o recomendado primeiro e ordena os demais do mais novo ao mais antigo', () => {
+    const list = [
+      { id: 'gemini-2.5-flash', label: 'a' },
+      { id: 'gemini-3.8-flash', label: 'b' },
+      { id: 'gemini-3.0-pro', label: 'c' },
+    ];
+    expect(sortModels(list, 'gemini-3.0-pro').map((m) => m.id)).toEqual([
+      'gemini-3.0-pro',
+      'gemini-3.8-flash',
+      'gemini-2.5-flash',
+    ]);
+  });
+
+  it('só usa a preferência se o modelo ainda existir', () => {
+    const list = [{ id: 'gemini-3.8-flash', label: 'x' }];
+    expect(pickModel('gemini-3.8-flash', list, 'fallback')).toBe('gemini-3.8-flash');
+    expect(pickModel('gemini-removido', list, 'fallback')).toBe('fallback');
+    expect(pickModel(null, list, 'fallback')).toBe('fallback');
   });
 });
