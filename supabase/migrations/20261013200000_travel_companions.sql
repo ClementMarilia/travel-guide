@@ -24,3 +24,38 @@ create policy travel_companions_update on travel_companions
   for update using (can_edit_trip(trip_id)) with check (can_edit_trip(trip_id));
 create policy travel_companions_delete on travel_companions
   for delete using (can_edit_trip(trip_id));
+
+-- Exige que cada acompanhante da viagem tenha uma entrevista antes da aprovação.
+-- Reutiliza a regra original de ordem e não apaga aprovações existentes.
+create or replace function approve_stage(p_trip uuid, p_stage stage_key) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  ord stage_key[] := enum_range(null::stage_key);
+  idx int := array_position(enum_range(null::stage_key), p_stage);
+  expected_count int;
+  actual_count int;
+begin
+  if not is_trip_owner(p_trip) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  if p_stage = 'travelers' then
+    select greatest(traveler_count - 1, 0) into expected_count from trips where id = p_trip;
+    select count(*) into actual_count from travel_companions where trip_id = p_trip;
+    if actual_count <> expected_count then
+      raise exception 'complete companion preferences before approval' using errcode = 'P0001';
+    end if;
+  end if;
+  if idx > 1 and not exists (
+    select 1 from trip_stages
+    where trip_id = p_trip and stage = ord[idx - 1] and status = 'approved'
+  ) then
+    raise exception 'previous stage not approved' using errcode = 'P0001';
+  end if;
+  update trip_stages set status = 'approved', approved_by = auth.uid(), approved_at = now()
+    where trip_id = p_trip and stage = p_stage;
+  if idx < array_length(ord, 1) then
+    update trip_stages set status = 'in_progress'
+    where trip_id = p_trip and stage = ord[idx + 1] and status = 'not_started';
+  end if;
+end;
+$$;
