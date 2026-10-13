@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase';
 import { PRICE_STATUS_LABEL, money, type PriceStatus } from '@/lib/budget';
+import RegionSources from './RegionSources';
 
 type Region = {
   id: string;
@@ -163,6 +164,7 @@ export default function RegionsSection({
               Ver hospedagens no mapa ↗
             </a>
           </p>
+          <RegionSources tripId={tripId} regionId={r.id} />
           {!r.chosen && (
             <button className="btn secondary" disabled={busy} onClick={() => choose(r.id)}>
               Escolher esta base
