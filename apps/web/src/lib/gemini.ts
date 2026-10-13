@@ -75,21 +75,33 @@ export function geminiHttpError(status: number): GeminiError {
 }
 
 async function geminiRequest(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
-  try {
-    const response = await fetch(url, { ...options, signal: AbortSignal.timeout(timeoutMs) });
-    if (!response.ok) {
-      console.error('Gemini HTTP status:', response.status);
+  // Uma única repetição para falhas transitórias. Nunca repetir 400/401/403/404/429.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(attempt === 0 ? timeoutMs : Math.min(timeoutMs, 15_000)),
+      });
+      if (response.ok) return response;
+      console.error('Gemini HTTP status:', response.status, 'attempt:', attempt + 1);
+      if ((response.status === 502 || response.status === 503 || response.status === 504) && attempt === 0) {
+        await new Promise(resolve => setTimeout(resolve, 700));
+        continue;
+      }
       throw geminiHttpError(response.status);
+    } catch (error) {
+      if (error instanceof GeminiError) throw error;
+      const timeout = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+      if (timeout && attempt === 0) {
+        await new Promise(resolve => setTimeout(resolve, 700));
+        continue;
+      }
+      if (timeout) throw new GeminiError('O Gemini demorou demais para responder. Tente novamente.', 504);
+      console.error('Gemini network request failed', error instanceof Error ? error.name : 'unknown');
+      throw new GeminiError('Não foi possível conectar ao Gemini. Tente novamente.', 502);
     }
-    return response;
-  } catch (error) {
-    if (error instanceof GeminiError) throw error;
-    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
-      throw new GeminiError('O Gemini demorou demais para responder. Tente novamente.', 504);
-    }
-    console.error('Gemini network request failed', error instanceof Error ? error.name : 'unknown');
-    throw new GeminiError('Não foi possível conectar ao Gemini. Tente novamente.', 502);
   }
+  throw new GeminiError('O Gemini está temporariamente indisponível. Tente novamente.', 502);
 }
 
 export async function askGemini(
