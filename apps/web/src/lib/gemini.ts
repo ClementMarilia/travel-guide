@@ -64,6 +64,34 @@ export class GeminiError extends Error {
   }
 }
 
+/** Mensagens operacionais seguras: não expõem chave nem payload da API. */
+export function geminiHttpError(status: number): GeminiError {
+  if (status === 400) return new GeminiError('Solicitação rejeitada pelo Gemini. Verifique a compatibilidade do modelo com respostas estruturadas.', 502);
+  if (status === 401 || status === 403) return new GeminiError('A autenticação do Gemini falhou. Verifique a chave e as permissões na Vercel.', 503);
+  if (status === 404) return new GeminiError('O modelo Gemini configurado não está disponível. Escolha outro modelo em Perfil.', 503);
+  if (status === 429) return new GeminiError('O limite de uso do Gemini foi atingido. Aguarde ou verifique sua cota.', 429);
+  if (status >= 500) return new GeminiError('O Gemini está temporariamente indisponível. Tente novamente.', 502);
+  return new GeminiError('O Gemini recusou a solicitação. Verifique a configuração do serviço.', 502);
+}
+
+async function geminiRequest(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  try {
+    const response = await fetch(url, { ...options, signal: AbortSignal.timeout(timeoutMs) });
+    if (!response.ok) {
+      console.error('Gemini HTTP status:', response.status);
+      throw geminiHttpError(response.status);
+    }
+    return response;
+  } catch (error) {
+    if (error instanceof GeminiError) throw error;
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      throw new GeminiError('O Gemini demorou demais para responder. Tente novamente.', 504);
+    }
+    console.error('Gemini network request failed', error instanceof Error ? error.name : 'unknown');
+    throw new GeminiError('Não foi possível conectar ao Gemini. Tente novamente.', 502);
+  }
+}
+
 export async function askGemini(
   apiKey: string,
   model: string,
@@ -72,13 +100,12 @@ export async function askGemini(
 ): Promise<{ reply: string; updates: Updates }> {
   // A conversa precisa começar por uma mensagem da pessoa.
   const items = history.slice(history.findIndex((h) => h.role === 'user'));
-  const response = await fetch(
+  const response = await geminiRequest(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
       method: 'POST',
       headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(25_000),
-      body: JSON.stringify({
+            body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: items.map((h) => ({
           role: h.role === 'user' ? 'user' : 'model',
@@ -92,8 +119,8 @@ export async function askGemini(
         },
       }),
     },
+    25_000,
   );
-  if (!response.ok) throw new GeminiError('Serviço de IA indisponível', 502);
 
   const data = await response.json();
   const raw = (data.candidates?.[0]?.content?.parts ?? [])
@@ -144,8 +171,7 @@ export async function generateStructured(
     {
       method: 'POST',
       headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(40_000),
-      body: JSON.stringify({
+            body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
@@ -156,8 +182,8 @@ export async function generateStructured(
         },
       }),
     },
+    40_000,
   );
-  if (!response.ok) throw new GeminiError('Serviço de IA indisponível', 502);
   const data = await response.json();
   const raw = (data.candidates?.[0]?.content?.parts ?? [])
     .map((p: { text?: string }) => p.text ?? '')
