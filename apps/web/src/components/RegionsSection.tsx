@@ -56,18 +56,25 @@ export default function RegionsSection({
   async function run(fn: () => Promise<string | null>) {
     setBusy(true);
     setError('');
-    const problem = await fn();
-    if (problem) setError(problem);
-    await load();
-    await onChanged();
-    setBusy(false);
+    try {
+      const problem = await fn();
+      if (problem) setError(problem);
+    } catch {
+      setError('Falha de conexão ou tempo esgotado. Tente novamente.');
+    }
+    try {
+      await load();
+      await onChanged();
+    } finally {
+      setBusy(false);
+    }
   }
 
   const suggest = () =>
     run(async () => {
       const res = await fetch(`/api/trips/${tripId}/regions`, { method: 'POST' });
-      const data = await res.json();
-      return res.ok ? null : (data.error ?? 'Erro ao sugerir regiões');
+      const data = await res.json().catch(() => ({}));
+      return res.ok ? null : (data.error ?? 'O servidor demorou demais ou falhou. Tente novamente.');
     });
 
   const choose = (regionId: string) =>

@@ -107,13 +107,18 @@ export default function BudgetSection({
   async function estimate() {
     setBusy(true);
     setError('');
-    const res = await fetch(`/api/trips/${tripId}/budget`, { method: 'POST' });
-    const data = await res.json();
-    if (!res.ok) setError(data.error ?? 'Erro ao estimar custos');
-    else setAssumptions(data.assumptions ?? '');
-    await load();
-    await onChanged();
-    setBusy(false);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/budget`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) setError(data.error ?? 'O servidor demorou demais ou falhou. Tente novamente.');
+      else setAssumptions(data.assumptions ?? '');
+      await load();
+      await onChanged();
+    } catch {
+      setError('Falha de conexão ou tempo esgotado. Tente novamente.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function savePlanned(category: Category, raw: string) {
@@ -135,10 +140,18 @@ export default function BudgetSection({
   async function approve() {
     setBusy(true);
     setError('');
-    const { error } = await supabaseBrowser().rpc('approve_stage', { p_trip: tripId, p_stage: 'viability' });
-    if (error) setError(error.message);
-    await onChanged();
-    setBusy(false);
+    try {
+      const { error } = await supabaseBrowser().rpc('approve_stage', {
+        p_trip: tripId,
+        p_stage: 'viability',
+      });
+      if (error) setError(error.message);
+      await onChanged();
+    } catch {
+      setError('Falha de conexão. Tente novamente.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   const blocker = !ev

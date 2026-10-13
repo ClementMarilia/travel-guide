@@ -7,6 +7,9 @@ import { generateStructured, GeminiError } from '@/lib/gemini';
 import { REGIONS_SCHEMA, REGIONS_SYSTEM, parseRegions, regionsPrompt } from '@/lib/regions';
 import { nightsBetween } from '@/lib/budget';
 
+// Tempo máximo da função (a chamada ao Gemini pode levar dezenas de segundos).
+export const maxDuration = 60;
+
 /** Gera até 3 regiões candidatas. Só depois de a viagem e as preferências estarem aprovadas. */
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

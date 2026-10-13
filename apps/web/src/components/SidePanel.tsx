@@ -66,10 +66,15 @@ export default function SidePanel({
   async function approve(stage: StageKey) {
     setBusy(true);
     setError('');
-    const { error } = await supabaseBrowser().rpc('approve_stage', { p_trip: tripId, p_stage: stage });
-    if (error) setError(error.message);
-    else await onChanged();
-    setBusy(false);
+    try {
+      const { error } = await supabaseBrowser().rpc('approve_stage', { p_trip: tripId, p_stage: stage });
+      if (error) setError(error.message);
+      else await onChanged();
+    } catch {
+      setError('Falha de conexão. Tente novamente.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
