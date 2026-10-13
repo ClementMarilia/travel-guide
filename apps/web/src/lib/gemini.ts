@@ -130,3 +130,41 @@ export async function testGeminiModel(apiKey: string, model: string): Promise<bo
     return false;
   }
 }
+
+/** Chamada de saída estruturada genérica (um único turno). Devolve o JSON bruto para validação. */
+export async function generateStructured(
+  apiKey: string,
+  model: string,
+  system: string,
+  prompt: string,
+  responseSchema: unknown,
+): Promise<unknown> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: 'POST',
+      headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(40_000),
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 4096,
+          responseMimeType: 'application/json',
+          responseSchema,
+        },
+      }),
+    },
+  );
+  if (!response.ok) throw new GeminiError('Serviço de IA indisponível', 502);
+  const data = await response.json();
+  const raw = (data.candidates?.[0]?.content?.parts ?? [])
+    .map((p: { text?: string }) => p.text ?? '')
+    .join('');
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new GeminiError('Resposta inválida da IA', 502);
+  }
+}

@@ -383,3 +383,105 @@ button {
 .statusdot.on {
   background: #1f9d6b;
 }
+
+/* Etapas de região e orçamento */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.section .btn {
+  width: auto;
+  align-self: flex-start;
+}
+.region {
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.region.chosen {
+  border-color: var(--accent);
+}
+.region h3,
+.region p,
+.region ul {
+  margin: 0;
+}
+.region ul {
+  padding-left: 18px;
+  font-size: 14px;
+}
+.pros li::marker {
+  content: '＋ ';
+  color: #1f9d6b;
+}
+.cons li::marker {
+  content: '− ';
+  color: var(--danger);
+}
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin: 0;
+  font-size: 14px;
+}
+.facts dt {
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+}
+.note {
+  font-size: 13px;
+  color: #4d4a55;
+  margin: 4px 0;
+  text-align: left !important;
+}
+.budget {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.budget th {
+  text-align: left;
+  font-weight: 600;
+  padding: 4px 6px;
+}
+.budget td {
+  padding: 6px;
+  vertical-align: top;
+  border-top: 1px solid var(--line);
+}
+.budget input {
+  width: 96px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px;
+  font: inherit;
+}
+.verdict {
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #fff;
+}
+.verdict.viable {
+  border-left: 5px solid #1f9d6b;
+}
+.verdict.tight,
+.verdict.unknown {
+  border-left: 5px solid #d99a00;
+}
+.verdict.deficit {
+  border-left: 5px solid var(--danger);
+}
+.tips {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+}
