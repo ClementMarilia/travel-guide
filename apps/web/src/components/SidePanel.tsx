@@ -5,6 +5,8 @@ import { checklistItems, capturedCount, isComplete, nextAction } from '@/lib/che
 import { STAGES, STATUS_LABEL, type StageKey } from '@/lib/stages';
 import type { TripState } from '@/lib/trip-state';
 import { supabaseBrowser } from '@/lib/supabase';
+import RegionsSection from './RegionsSection';
+import BudgetSection from './BudgetSection';
 
 const PACE = { relaxed: 'Tranquilo', balanced: 'Equilibrado', intense: 'Intenso' } as const;
 const TRANSPORT = { car: 'Carro', public: 'Público', mixed: 'Misto' } as const;
@@ -44,10 +46,12 @@ function Ring({ value, total }: { value: number; total: number }) {
 export default function SidePanel({
   tripId,
   state,
+  isOwner,
   onChanged,
 }: {
   tripId: string;
   state: TripState;
+  isOwner: boolean;
   onChanged: () => Promise<void>;
 }) {
   const { trip, prefs, stages } = state;
@@ -113,6 +117,30 @@ export default function SidePanel({
           </div>
         )}
 
+        {action.kind === 'base' && trip.destination && (
+          <RegionsSection
+            tripId={tripId}
+            destination={trip.destination}
+            currency={trip.currency}
+            approved={false}
+            isOwner={isOwner}
+            onChanged={onChanged}
+          />
+        )}
+        {action.kind === 'viability' && (
+          <BudgetSection
+            tripId={tripId}
+            currency={trip.currency}
+            totalBudget={trip.total_budget}
+            startDate={trip.start_date}
+            endDate={trip.end_date}
+            travelers={trip.traveler_count}
+            approved={false}
+            isOwner={isOwner}
+            onChanged={onChanged}
+          />
+        )}
+
         <div className="card">
           {action.kind === 'collect' && (
             <>
@@ -137,6 +165,12 @@ export default function SidePanel({
               </button>
               <p>Confira as preferências acima. Ajuste pelo chat se quiser.</p>
             </>
+          )}
+          {(action.kind === 'base' || action.kind === 'viability') && (
+            <p style={{ margin: 0 }}>
+              Etapa atual:{' '}
+              <strong>{action.kind === 'base' ? 'Escolher a base' : 'Validar a viabilidade'}</strong>.
+            </p>
           )}
           {action.kind === 'coming_soon' && (
             <p style={{ margin: 0 }}>

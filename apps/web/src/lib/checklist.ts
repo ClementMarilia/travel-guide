@@ -76,6 +76,8 @@ export type NextAction =
   | { kind: 'collect' }
   | { kind: 'confirm_trip' }
   | { kind: 'approve_travelers' }
+  | { kind: 'base' }
+  | { kind: 'viability' }
   | { kind: 'coming_soon'; stage: StageKey }
   | { kind: 'done' };
 
@@ -85,7 +87,9 @@ export function nextAction(stages: StageRow[], complete: boolean, hasPrefs: bool
   if (status('create_trip') !== 'approved') return complete ? { kind: 'confirm_trip' } : { kind: 'collect' };
   if (status('travelers') !== 'approved')
     return hasPrefs ? { kind: 'approve_travelers' } : { kind: 'collect' };
-  const order: StageKey[] = ['base', 'viability', 'itinerary', 'review', 'prepare'];
+  if (status('base') !== 'approved') return { kind: 'base' };
+  if (status('viability') !== 'approved') return { kind: 'viability' };
+  const order: StageKey[] = ['itinerary', 'review', 'prepare'];
   const pending = order.find((k) => status(k) !== 'approved');
   return pending ? { kind: 'coming_soon', stage: pending } : { kind: 'done' };
 }

@@ -111,7 +111,7 @@ export default function TripStudio({
         <p className="disclaimer">Assistente com IA. Confira as informações importantes antes de reservar.</p>
       </section>
 
-      <SidePanel tripId={tripId} state={state} onChanged={refresh} />
+      <SidePanel tripId={tripId} state={state} isOwner={state.trip.owner_id === userId} onChanged={refresh} />
     </div>
   );
 }
