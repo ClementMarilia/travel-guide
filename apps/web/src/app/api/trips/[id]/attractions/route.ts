@@ -28,7 +28,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
   const paramsWiki = new URLSearchParams({
     action: 'query', generator: 'search',
-    gsrsearch: `intitle:"${destination.data.replace(/["\\]/g, '')}" tourist attractions landmarks`,
+    gsrsearch: `${destination.data.replace(/["\\]/g, '')} landmarks tourist attractions`,
     gsrlimit: '8', prop: 'info', inprop: 'url', format: 'json', formatversion: '2',
   });
   try {
