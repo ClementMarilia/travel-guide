@@ -10,7 +10,8 @@
     "dev:web": "npm run dev --workspace=@travel-guide/web",
     "dev:api": "npm run dev --workspace=@travel-guide/api",
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
   },
   "engines": {
     "node": ">=20"
