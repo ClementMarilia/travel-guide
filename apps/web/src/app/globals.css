@@ -116,7 +116,8 @@ button {
   gap: 6px;
   margin-bottom: 16px;
 }
-.field input {
+.field input,
+.field select {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 12px;
@@ -362,4 +363,23 @@ button {
   .chat {
     border-right: 0;
   }
+}
+
+/* Integrações de IA */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #eef7f2;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.statusdot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #a9a4b8;
+}
+.statusdot.on {
+  background: #1f9d6b;
 }

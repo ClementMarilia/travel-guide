@@ -5,6 +5,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { splitUpdates } from '@/lib/chat-updates';
 import { askGemini, buildSystemPrompt, GeminiError } from '@/lib/gemini';
 import { loadMessages, loadTripState } from '@/lib/trip-state';
+import { fetchModels, pickModel, recommendedModel } from '@/lib/models';
 
 const body = z.object({ tripId: z.string().uuid(), message: z.string().trim().min(1).max(1000) });
 
@@ -38,17 +39,20 @@ export async function POST(request: NextRequest) {
   const state = await loadTripState(db, tripId, user.id);
   if (!state) return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
 
+  // Modelo escolhido pela pessoa, se ainda existir; senão o recomendado.
+  const { data: profile } = await db.from('profiles').select('ai_model').eq('id', user.id).maybeSingle();
+  const allowed = await fetchModels(apiKey).catch(() => []);
+  const model = pickModel(profile?.ai_model, allowed, recommendedModel());
+
   const history = await loadMessages(db, tripId, 20);
   const today = new Date().toISOString().slice(0, 10);
 
   let result;
   try {
-    result = await askGemini(
-      apiKey,
-      process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-      buildSystemPrompt(today, state.trip, state.prefs),
-      [...history, { role: 'user', content: message }],
-    );
+    result = await askGemini(apiKey, model, buildSystemPrompt(today, state.trip, state.prefs), [
+      ...history,
+      { role: 'user', content: message },
+    ]);
   } catch (e) {
     const status = e instanceof GeminiError ? e.status : 502;
     const error = e instanceof GeminiError ? e.message : 'Falha ao falar com a IA';
