@@ -105,7 +105,7 @@ export async function askGemini(
     {
       method: 'POST',
       headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+      body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: items.map((h) => ({
           role: h.role === 'user' ? 'user' : 'model',
@@ -166,12 +166,12 @@ export async function generateStructured(
   prompt: string,
   responseSchema: unknown,
 ): Promise<unknown> {
-  const response = await fetch(
+  const response = await geminiRequest(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
       method: 'POST',
       headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+      body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
