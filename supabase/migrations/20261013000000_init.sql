@@ -146,7 +146,8 @@ create table traveler_preferences (
   activities_per_day int check (activities_per_day between 1 and 6),
   earliest_start time,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  unique (trip_id, user_id)                  -- uma linha por usuário; viajantes sem conta têm user_id nulo
 );
 
 create index traveler_preferences_trip_idx on traveler_preferences (trip_id);
@@ -196,7 +197,8 @@ create policy profiles_select on profiles for select using (id = auth.uid());
 create policy profiles_update on profiles for update using (id = auth.uid()) with check (id = auth.uid());
 
 -- trips
-create policy trips_select on trips for select using (is_trip_member(id));
+-- owner_id garante que o INSERT ... RETURNING funcione antes do trigger criar o membro.
+create policy trips_select on trips for select using (owner_id = auth.uid() or is_trip_member(id));
 create policy trips_insert on trips for insert with check (owner_id = auth.uid());
 create policy trips_update on trips for update using (can_edit_trip(id)) with check (can_edit_trip(id));
 create policy trips_delete on trips for delete using (is_trip_owner(id));
@@ -215,3 +217,61 @@ create policy prefs_write on traveler_preferences for all
 create policy stages_select on trip_stages for select using (is_trip_member(trip_id));
 create policy stages_update on trip_stages for update
   using (is_trip_owner(trip_id)) with check (is_trip_owner(trip_id));
+
+-- Transições de etapa ---------------------------------------------------
+-- A ordem das etapas é a ordem do enum stage_key. Uma etapa só pode ser
+-- aprovada se a anterior estiver aprovada; reabrir uma etapa marca as
+-- etapas posteriores já aprovadas como 'needs_review' sem apagar dados.
+
+create function approve_stage(p_trip uuid, p_stage stage_key) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  ord stage_key[] := enum_range(null::stage_key);
+  idx int := array_position(enum_range(null::stage_key), p_stage);
+begin
+  if not is_trip_owner(p_trip) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+
+  if idx > 1 and not exists (
+    select 1 from trip_stages
+    where trip_id = p_trip and stage = ord[idx - 1] and status = 'approved'
+  ) then
+    raise exception 'previous stage not approved' using errcode = 'P0001';
+  end if;
+
+  update trip_stages
+     set status = 'approved', approved_by = auth.uid(), approved_at = now()
+   where trip_id = p_trip and stage = p_stage;
+
+  if idx < array_length(ord, 1) then
+    update trip_stages set status = 'in_progress'
+     where trip_id = p_trip and stage = ord[idx + 1] and status = 'not_started';
+  end if;
+end;
+$$;
+
+create function reopen_stage(p_trip uuid, p_stage stage_key) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  ord stage_key[] := enum_range(null::stage_key);
+  idx int := array_position(enum_range(null::stage_key), p_stage);
+begin
+  if not can_edit_trip(p_trip) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+
+  update trip_stages
+     set status = 'in_progress', approved_by = null, approved_at = null
+   where trip_id = p_trip and stage = p_stage;
+
+  update trip_stages set status = 'needs_review'
+   where trip_id = p_trip and status = 'approved'
+     and array_position(ord, stage) > idx;
+end;
+$$;
+
+revoke all on function approve_stage(uuid, stage_key) from public, anon;
+revoke all on function reopen_stage(uuid, stage_key) from public, anon;
+grant execute on function approve_stage(uuid, stage_key) to authenticated;
+grant execute on function reopen_stage(uuid, stage_key) to authenticated;

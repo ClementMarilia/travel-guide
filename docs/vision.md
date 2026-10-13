@@ -24,16 +24,16 @@ O produto não vende nem processa reservas ou pagamentos. Ele planeja e aponta l
 
 ## Tecnologias
 
-| Camada | Tecnologia |
-|---|---|
-| Frontend | Next.js + TypeScript |
-| UI | Tailwind CSS + shadcn/ui |
-| Banco / Auth / Storage | Supabase (PostgreSQL, Auth, Storage, RLS) |
-| IA | OpenAI ou Gemini, com saídas estruturadas validadas por Zod |
-| Mapas | Google Maps ou Mapbox |
-| PDF | React PDF |
-| E-mail | Resend ou equivalente |
-| Deploy | Vercel |
+| Camada                 | Tecnologia                                                  |
+| ---------------------- | ----------------------------------------------------------- |
+| Frontend               | Next.js + TypeScript                                        |
+| UI                     | Tailwind CSS + shadcn/ui                                    |
+| Banco / Auth / Storage | Supabase (PostgreSQL, Auth, Storage, RLS)                   |
+| IA                     | OpenAI ou Gemini, com saídas estruturadas validadas por Zod |
+| Mapas                  | Google Maps ou Mapbox                                       |
+| PDF                    | React PDF                                                   |
+| E-mail                 | Resend ou equivalente                                       |
+| Deploy                 | Vercel                                                      |
 
 ## Princípios
 

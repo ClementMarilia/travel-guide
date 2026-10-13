@@ -36,6 +36,7 @@ Dados de preço distinguem três níveis: **confirmado**, **estimado**, **indisp
 ## 3. Fases
 
 ### Fase 1 — Fundação (em andamento)
+
 - Design system e layout responsivo.
 - Autenticação Supabase (e-mail e Google), perfis.
 - Banco de dados com RLS.
@@ -44,59 +45,62 @@ Dados de preço distinguem três níveis: **confirmado**, **estimado**, **indisp
 - Máquina de estados das sete etapas.
 
 ### Fase 2 — Inteligência e decisões
+
 - Integração da IA com saídas estruturadas (Zod).
 - Análise de preferências e conflitos entre viajantes.
 - Comparação de regiões e pesquisa de hospedagens.
 - Motor de orçamento e viabilidade (determinístico).
 
 ### Fase 3 — Planejamento completo
+
 - Roteiro diário com horários, custos e alternativas.
 - Mapa interativo e rotas.
 - Assistente contextual com histórico de alterações.
 
 ### Fase 4 — Beta
+
 - Colaboração (proprietário, editor, visualizador).
 - Checklist, PDF e compartilhamento.
 - Painel administrativo, monitoramento, testes e deploy.
 
 ## 4. Módulos
 
-| # | Módulo | Fase |
-|---|---|---|
-| 01 | Landing page e descoberta | 1 |
-| 02 | Cadastro e perfil | 1 |
-| 03 | Formulário inteligente de viajantes | 1 (IA na 2) |
-| 04 | Comparador de regiões e hospedagens | 2 |
-| 05 | Validador de orçamento e viabilidade | 2 |
-| 06 | Gerador inteligente de roteiros | 3 |
-| 07 | Mapa interativo | 3 |
-| 08 | Assistente de IA contextual | 3 |
-| 09 | Gestão de viagens | 1 |
-| 10 | Colaboração entre viajantes | 4 |
-| 11 | Checklist, compartilhamento e exportação | 4 |
-| 12 | Painel administrativo | 4 |
+| #   | Módulo                                   | Fase        |
+| --- | ---------------------------------------- | ----------- |
+| 01  | Landing page e descoberta                | 1           |
+| 02  | Cadastro e perfil                        | 1           |
+| 03  | Formulário inteligente de viajantes      | 1 (IA na 2) |
+| 04  | Comparador de regiões e hospedagens      | 2           |
+| 05  | Validador de orçamento e viabilidade     | 2           |
+| 06  | Gerador inteligente de roteiros          | 3           |
+| 07  | Mapa interativo                          | 3           |
+| 08  | Assistente de IA contextual              | 3           |
+| 09  | Gestão de viagens                        | 1           |
+| 10  | Colaboração entre viajantes              | 4           |
+| 11  | Checklist, compartilhamento e exportação | 4           |
+| 12  | Painel administrativo                    | 4           |
 
 Idiomas previstos: português, italiano, inglês e espanhol (a estrutura de i18n entra na fase 1; os textos podem chegar aos poucos).
 
 ## 5. Telas
 
-| Rota | Tela |
-|---|---|
-| `/` | Home |
-| `/explorar` | Explorar |
-| `/login`, `/cadastro` | Autenticação |
-| `/dashboard` | Minhas viagens |
-| `/viagens/nova` | Nova viagem |
-| `/viagens/:id/viajantes` | Preferências |
-| `/viagens/:id/regioes` | Comparar regiões |
-| `/viagens/:id/hospedagem` | Hospedagens |
-| `/viagens/:id/orcamento` | Orçamento |
-| `/viagens/:id/roteiro` | Roteiro |
-| `/viagens/:id/mapa` | Mapa |
-| `/viagens/:id/checklist` | Preparação |
-| `/viagens/:id/compartilhar` | Colaboração |
-| `/perfil` | Perfil |
-| `/admin` | Administração |
+| Rota                        | Tela             |
+| --------------------------- | ---------------- |
+| `/`                         | Home             |
+| `/explorar`                 | Explorar         |
+| `/login`, `/cadastro`       | Autenticação     |
+| `/dashboard`                | Minhas viagens   |
+| `/viagens/nova`             | Nova viagem      |
+| `/viagens/:id/viajantes`    | Preferências     |
+| `/viagens/:id/regioes`      | Comparar regiões |
+| `/viagens/:id/hospedagem`   | Hospedagens      |
+| `/viagens/:id/orcamento`    | Orçamento        |
+| `/viagens/:id/roteiro`      | Roteiro          |
+| `/viagens/:id/mapa`         | Mapa             |
+| `/viagens/:id/checklist`    | Preparação       |
+| `/viagens/:id/compartilhar` | Colaboração      |
+| `/perfil`                   | Perfil           |
+| `/admin`                    | Administração    |
 
 ## 6. Orçamento
 
