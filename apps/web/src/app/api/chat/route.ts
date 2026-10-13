@@ -7,6 +7,9 @@ import { askGemini, buildSystemPrompt, GeminiError } from '@/lib/gemini';
 import { loadMessages, loadTripState } from '@/lib/trip-state';
 import { fetchModels, pickModel, recommendedModel } from '@/lib/models';
 
+// Tempo máximo da função (a chamada ao Gemini pode levar dezenas de segundos).
+export const maxDuration = 60;
+
 const body = z.object({ tripId: z.string().uuid(), message: z.string().trim().min(1).max(1000) });
 
 const REOPENED_NOTE =

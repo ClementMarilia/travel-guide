@@ -7,6 +7,9 @@ import { generateStructured, GeminiError } from '@/lib/gemini';
 import { ESTIMATE_SCHEMA, ESTIMATE_SYSTEM, estimatePrompt, parseEstimate } from '@/lib/budget-ai';
 import { CATEGORIES, defaultAllocation, lodgingEstimate, nightsBetween } from '@/lib/budget';
 
+// Tempo máximo da função (a chamada ao Gemini pode levar dezenas de segundos).
+export const maxDuration = 60;
+
 const AI_SOURCE = 'Estimativa da IA (não verificada)';
 
 /** Calcula as faixas de custo da viagem e grava os itens do orçamento, preservando o que a pessoa já planejou. */
