@@ -7,6 +7,7 @@ import type { TripState } from '@/lib/trip-state';
 import { supabaseBrowser } from '@/lib/supabase';
 import RegionsSection from './RegionsSection';
 import BudgetSection from './BudgetSection';
+import CompanionsSection from './CompanionsSection';
 
 const PACE = { relaxed: 'Tranquilo', balanced: 'Equilibrado', intense: 'Intenso' } as const;
 const TRANSPORT = { car: 'Carro', public: 'Público', mixed: 'Misto' } as const;
@@ -122,6 +123,10 @@ export default function SidePanel({
           </div>
         )}
 
+        {stages.some(s => s.stage === 'create_trip' && s.status === 'approved') && trip.traveler_count > 1 && (
+          <CompanionsSection tripId={tripId} travelerCount={trip.traveler_count}
+            ownerPace={prefs?.pace ?? null} isOwner={isOwner} onChanged={onChanged} />
+        )}
         {action.kind === 'base' && trip.destination && (
           <RegionsSection
             tripId={tripId}
