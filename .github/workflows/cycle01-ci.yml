@@ -17,7 +17,8 @@ concurrency:
 jobs:
   validate:
     name: TypeScript, Vitest and Next build
-    runs-on: ubuntu-latest
+    # Fixar runner para evitar mudanças inesperadas na imagem ubuntu-latest.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
