@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { supabaseServer } from '@/lib/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { fetchModels, recommendedModel } from '@/lib/models';
-import { testGeminiModel } from '@/lib/gemini';
+import { testGeminiModel, GeminiError } from '@/lib/gemini';
 
 // `null` volta ao modelo recomendado.
 const body = z.object({
@@ -41,11 +41,12 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Não foi possível validar o modelo agora.' }, { status: 502 });
   }
-  if (!(await testGeminiModel(apiKey, effective))) {
-    return NextResponse.json(
-      { error: 'O teste falhou. A configuração anterior foi mantida.' },
-      { status: 502 },
-    );
+  try {
+    await testGeminiModel(apiKey, effective);
+  } catch (cause) {
+    const message = cause instanceof GeminiError ? cause.message : 'Falha inesperada no teste do Gemini.';
+    const status = cause instanceof GeminiError ? cause.status : 502;
+    return NextResponse.json({ error: `${message} A configuração anterior foi mantida.` }, { status });
   }
 
   const { error } = await db.from('profiles').update({ ai_model: chosen }).eq('id', user.id);

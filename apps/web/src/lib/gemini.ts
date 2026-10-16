@@ -150,23 +150,23 @@ export async function askGemini(
 }
 
 /** Chamada mínima para confirmar que a chave e o modelo respondem. */
-export async function testGeminiModel(apiKey: string, model: string): Promise<boolean> {
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(20_000),
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: 'Responda apenas: ok' }] }],
-          generationConfig: { maxOutputTokens: 256 },
-        }),
-      },
-    );
-    return response.ok;
-  } catch {
-    return false;
+export async function testGeminiModel(apiKey: string, model: string): Promise<void> {
+  const response = await geminiRequest(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: 'POST',
+      headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: 'Responda apenas: ok' }] }],
+        generationConfig: { maxOutputTokens: 256 },
+      }),
+    },
+    20_000,
+  );
+  const payload: unknown = await response.json().catch(() => null);
+  const candidates = (payload as { candidates?: unknown } | null)?.candidates;
+  if (!Array.isArray(candidates) || candidates.length === 0) {
+    throw new GeminiError('O Gemini respondeu sem conteúdo. Tente outro modelo.', 502);
   }
 }
 
