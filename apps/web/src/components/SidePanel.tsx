@@ -8,6 +8,7 @@ import { supabaseBrowser } from '@/lib/supabase';
 import RegionsSection from './RegionsSection';
 import BudgetSection from './BudgetSection';
 import CompanionsSection from './CompanionsSection';
+import AttractionsResearch from './AttractionsResearch';
 
 const PACE = { relaxed: 'Tranquilo', balanced: 'Equilibrado', intense: 'Intenso' } as const;
 const TRANSPORT = { car: 'Carro', public: 'Público', mixed: 'Misto' } as const;
@@ -149,6 +150,10 @@ export default function SidePanel({
             isOwner={isOwner}
             onChanged={onChanged}
           />
+        )}
+
+        {action.kind === 'coming_soon' && action.stage === 'itinerary' && (
+          <AttractionsResearch tripId={tripId} />
         )}
 
         <div className="card">
