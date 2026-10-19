@@ -1,0 +1,43 @@
+name: Cycle 01 - Isolated PostgreSQL migration test
+
+# Manual by design: never consumes Actions minutes on push/PR automatically.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  companions-migration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: staging_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d staging_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test-only
+      PGDATABASE: staging_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Prepare synthetic schema
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/cycle01_fixture.sql
+      - name: Apply the actual pending migration
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261013200000_travel_companions.sql
+      - name: Assert stage approval and RLS access
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/cycle01_companions_assertions.sql
