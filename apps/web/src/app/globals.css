@@ -485,3 +485,32 @@ button {
   padding-left: 18px;
   font-size: 14px;
 }
+
+
+/* Landing premium: geometria CSS, sem imagens ou fontes externas. */
+.landing { min-height:calc(100vh - var(--header-h)); position:relative; overflow:hidden; background:radial-gradient(ellipse at 80% 0%, #e8ddff 0%, transparent 42%),linear-gradient(145deg,#fcfaff,#f4f1ff 65%,#e9e5fa); }
+.landing-orbit { position:absolute; top:-280px; right:-280px; width:680px; height:680px; border:1px solid #d3c5ff; border-radius:50%; box-shadow:0 0 0 80px #e0d6ff33,0 0 0 160px #cabaff24; pointer-events:none; }
+.landing-grid { position:relative; z-index:1; max-width:1230px; padding-top:90px; padding-bottom:72px; display:grid; grid-template-columns:minmax(0,1fr) minmax(340px,500px); gap:clamp(28px,5vw,90px); align-items:center; }
+.landing-eyebrow {font-weight:800; font-size:12px; letter-spacing:.13em; color:#6d4aff;}
+.landing-copy h1 {font-size:clamp(45px,5.6vw,78px);line-height:1.06; letter-spacing:-.055em; margin:23px 0; max-width:660px;}
+.landing-copy h1 em {color:#6d4aff; font-style:normal;}
+.landing-copy>p {font-size:18px;line-height:1.75;color:#625a77;max-width:570px;}
+.landing-trust {display:flex;flex-wrap:wrap;gap:13px 23px;margin:30px 0;font-size:13px;font-weight:600;color:#554b78;}
+.landing-text-link {font-weight:800;text-decoration:underline;text-underline-offset:5px;}
+.planner-card {background:#fff;border:1px solid #e6e0f7;border-radius:26px;padding:clamp(23px,3vw,35px);box-shadow:0 28px 70px #45348321;}
+.planner-card-head h2 {margin:10px 0 3px;font-size:30px;line-height:1.2;letter-spacing:-.03em;}
+.planner-card-head p {margin:0 0 24px;color:#746c84;font-size:14px;}
+.planner-two {display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+.planner-two label {display:flex;flex-direction:column;gap:7px;font-weight:700;font-size:13px;color:#44385b;min-width:0;}
+.planner-two input,.planner-two select {display:block;min-width:0;width:100%;padding:13px 12px;min-height:47px;border:1px solid #ded8ee;background:#fff;border-radius:11px;font:inherit;font-weight:500;color:#241a3b;}
+.planner-two input:focus,.planner-two select:focus {outline:2px solid #a28dff;outline-offset:1px;}
+.planner-submit {display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:23px;padding:16px 20px;background:#6d4aff;border:0;color:white;border-radius:12px;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 10px 25px #6d4aff45;}
+.planner-submit:hover {background:#5434e7;transform:translateY(-1px);}
+.planner-disclaimer {font-size:11px;color:#807990;line-height:1.5;margin:13px 0 0;}
+.landing-features {max-width:1230px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding-bottom:64px;}
+.landing-feature {padding:25px 23px;background:#ffffffb8;border:1px solid #e6e0f7;border-radius:20px;}
+.landing-feature>span {font-size:13px;font-weight:800;color:#6d4aff;}
+.landing-feature h3 {margin:12px 0 4px;font-size:19px;}
+.landing-feature p {margin:0;font-size:14px;color:#625a77;}
+@media(max-width:950px){.landing-grid{grid-template-columns:1fr;padding-top:45px;gap:28px}.landing-copy h1{max-width:800px}.landing-features{grid-template-columns:1fr 1fr;}}
+@media(max-width:580px){.landing-grid{padding:35px 16px 30px}.landing-copy h1{font-size:43px}.landing-copy>p{font-size:16px}.planner-card{padding:20px 16px}.planner-two{gap:12px}.planner-two input,.planner-two select{padding:10px 8px;font-size:12px}.landing-features{grid-template-columns:1fr;padding:0 16px 30px}.landing-trust{gap:9px;}}
